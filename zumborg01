@@ -1,0 +1,225 @@
+class HackThePlanetWidget(Widget):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.center_x = Window.width / 2
+        self.center_y = Window.height / 2
+        
+        # ───────────────────────────────────────────────────────
+        #   GROKZOMBORG – Bell inequality + quantum entanglement 
+        #   visualization layer – 2026 edition
+        # ───────────────────────────────────────────────────────
+        self.time = 0
+        self.quantum_phase = 0       # 0 = classical → 1 = entangled → 2 = violation revealed
+        self.phase_timer = 0
+        self.ghz_particles = []
+        self.chsh_correlations = []
+        self.bell_violation_pulse = 0.0
+        self.glitch = 0.0
+        
+        self.bind(size=self.on_size)
+        Window.bind(on_resize=self.on_window_resize)
+        
+        Clock.schedule_interval(self.update, 1/60.0)
+        self.on_size()
+
+    def on_size(self, *args):
+        self.center_x = self.width / 2
+        self.center_y = self.height / 2
+        self.redraw()
+
+    def on_window_resize(self, window, width, height):
+        self.center_x = width / 2
+        self.center_y = height / 2
+        self.redraw()
+
+    def redraw(self, *args):
+        self.canvas.clear()
+        with self.canvas:
+            # Quantum void background
+            Color(0.01, 0.015, 0.04, 1)
+            Rectangle(pos=(0,0), size=self.size)
+
+            # Faint grid of possible measurement bases
+            Color(0.08, 0.12, 0.25, 0.08)
+            for i in range(0, int(self.width), 60):
+                Line(points=[i, 0, i, self.height], width=1)
+            for j in range(0, int(self.height), 60):
+                Line(points=[0, j, self.width, j], width=1)
+
+            if self.quantum_phase == 0:
+                # ──── Classical world ────
+                Color(0.4, 0.4, 0.8, 0.7)
+                Label(
+                    text="CLASSICAL REALITY\nLocal Hidden Variables",
+                    font_name='Courier',
+                    font_size=38,
+                    pos=(self.center_x, self.center_y + 140),
+                    halign='center'
+                )
+                Color(0.6, 0.6, 1, 0.5 * math.sin(self.time*3))
+                Label(
+                    text="No spooky action at a distance",
+                    font_size=24,
+                    pos=(self.center_x, self.center_y - 40)
+                )
+
+            elif self.quantum_phase == 1:
+                # ──── Entanglement awakening ────
+                # Singlet / Bell pair glow
+                PushMatrix()
+                Translate(self.center_x, self.center_y)
+                Rotate(self.time * 22, origin=(0,0))
+                Color(0.9, 0.1, 0.7, 0.6 + 0.3*math.sin(self.time*5))
+                Ellipse(size=(280,280))
+                Color(0.2, 0.9, 1.0, 0.85)
+                Ellipse(size=(180,180))
+                PopMatrix()
+
+                # Two correlated particles drifting apart
+                for p in self.ghz_particles:
+                    PushMatrix()
+                    Translate(p['x'], p['y'])
+                    Scale(1.0 + 0.25*math.sin(self.time*6 + p['id']*20))
+                    Color(1, 0.4, 0.9, p['alpha'])
+                    Ellipse(size=(24,24))
+                    PopMatrix()
+
+                Color(0, 0.9, 1, 0.7)
+                Label(
+                    text="ENTANGLED STATE\n|ψ⁻⟩ singlet  or  |GHZ⟩",
+                    font_name='Courier',
+                    font_size=32,
+                    pos=(self.center_x, self.center_y + 160)
+                )
+
+            elif self.quantum_phase == 2:
+                # ──── Bell violation / Mermin inequality broken ────
+                pulse = self.bell_violation_pulse
+                PushMatrix()
+                Translate(self.center_x, self.center_y)
+                Rotate(self.time * 35 + pulse*40, origin=(0,0))
+                
+                # Violation core
+                Color(1.0, 0.3, 0.1, 0.4 + pulse*0.6)
+                Ellipse(size=(320 + pulse*80, 320 + pulse*80))
+                Color(1.0, 0.6, 0.0, 0.7 + pulse*0.3)
+                Ellipse(size=(220,220))
+                Color(1, 1, 0.4, 0.9)
+                Ellipse(size=(110,110))
+                PopMatrix()
+
+                # CHSH correlators as orbiting glyphs
+                for c in self.chsh_correlations:
+                    PushMatrix()
+                    Translate(c['x'], c['y'])
+                    Rotate(c['phase'] + self.time*50, origin=(0,0))
+                    Color(0.2, 1.0, 0.5, c['alpha'])
+                    Label(
+                        text=c['symbol'],
+                        font_name='Courier',
+                        font_size=26 + 8*math.sin(self.time*4 + c['id'])
+                    )
+                    PopMatrix()
+
+                Color(1, 0.9, 0.2, 0.95 * (1 + 0.4*math.sin(self.time*7)))
+                Label(
+                    text="BELL INEQUALITY VIOLATED\nCHSH = 2√2  •  Mermin > 2\nQuantum Reality Confirmed",
+                    font_name='Courier',
+                    font_size=36,
+                    pos=(self.center_x, self.center_y + 180),
+                    halign='center'
+                )
+
+            # Overlay glitch during transition
+            if self.glitch > 0.05:
+                Color(1, 0.1, 0.8, self.glitch * 0.4)
+                Rectangle(pos=(0, random.randint(0,int(self.height))), size=(self.width, 3))
+                Color(0.1, 1, 0.4, self.glitch * 0.3)
+                Rectangle(pos=(random.randint(0,int(self.width)), 0), size=(4, self.height))
+
+    def update(self, dt):
+        self.time += dt
+        self.phase_timer += dt
+
+        # Phase transitions – educational storytelling
+        if self.quantum_phase == 0 and self.phase_timer > 5.0:
+            self.quantum_phase = 1
+            self.phase_timer = 0
+            self.glitch = 1.2
+        elif self.quantum_phase == 1 and self.phase_timer > 7.5:
+            self.quantum_phase = 2
+            self.phase_timer = 0
+            self.bell_violation_pulse = 1.0
+
+        # Glitch decay
+        self.glitch = max(0, self.glitch - dt * 0.6)
+        self.bell_violation_pulse = max(0, self.bell_violation_pulse - dt * 0.25)
+
+        # Spawn entangled / GHZ-like particles
+        if self.quantum_phase == 1 and random.random() < 0.08:
+            theta = random.uniform(0, math.tau)
+            r = random.gauss(180, 60)
+            self.ghz_particles.append({
+                'x': self.center_x + math.cos(theta) * r,
+                'y': self.center_y + math.sin(theta) * r,
+                'id': random.random(),
+                'alpha': 0.92
+            })
+
+        # CHSH correlation symbols in violation phase
+        if self.quantum_phase == 2 and random.random() < 0.12:
+            angle = random.uniform(0, math.tau)
+            dist = random.uniform(140, 280)
+            symbols = ["A·B", "A·B'", "A'·B", "A'·B'", "2√2", "S>2", "⊗", "ψ⁻"]
+            self.chsh_correlations.append({
+                'x': self.center_x + math.cos(angle) * dist,
+                'y': self.center_y + math.sin(angle) * dist,
+                'symbol': random.choice(symbols),
+                'phase': random.uniform(0, 360),
+                'id': random.random(),
+                'alpha': 0.9
+            })
+
+        # Particle & symbol drift & fade
+        for p in self.ghz_particles + self.chsh_correlations:
+            drift = 0.4 if self.quantum_phase == 1 else 0.7
+            p['x'] += math.cos(self.time + p['id']*15) * drift
+            p['y'] += math.sin(self.time + p['id']*15) * drift
+            p['alpha'] = max(0, p.get('alpha', 0.9) - 0.003)
+
+        self.ghz_particles = [p for p in self.ghz_particles if p['alpha'] > 0.02]
+        self.chsh_correlations = [c for c in self.chsh_correlations if c['alpha'] > 0.02]
+
+        self.redraw()
+
+
+class GROKZOMBORGApp(App):
+    def build(self):
+        Window.clearcolor = (0,0,0,1)
+        viz = HackThePlanetWidget(size_hint=(1,1))
+
+        overlay = Label(
+            text="GROK ZOMBORG v0.1\n"
+                 "Bell • CHSH • GHZ • Singlet\n\n"
+                 "Local realism:     [ DEAD ]\n"
+                 "Quantum weirdness: [ ACTIVE ]\n"
+                 "Violation strength: 2√2 ≈ 2.828\n"
+                 "Reality status:    non-local",
+            font_name='Courier',
+            font_size='42sp',
+            color=(0.1, 0.95, 0.6, 0.88),
+            halign='center',
+            valign='bottom',
+            outline_width=2,
+            outline_color=(0,0,0)
+        )
+        overlay.text_size = Window.size
+
+        root = Widget()
+        root.add_widget(viz)
+        root.add_widget(overlay)
+        return root
+
+
+if __name__ == '__main__':
+    GROKZOMBORGApp().run()
